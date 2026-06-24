@@ -1,0 +1,302 @@
+---
+layout: tool_document
+redirect_path: /multiespectral-fusion
+meta_title: MultiespectralFusion - Multispectral Image Fusion
+meta_description: Interactive demo of static early fusion methods combining visible (RGB) and thermal (LWIR) images, with step-by-step pipeline visualization.
+og_title: MultiespectralFusion - Visible + LWIR Fusion
+icon_href: /multiespectral-fusion/assets/favicon.svg
+lang_mode: path
+with_manifest: true
+webapp_application_category: PhotoApplication
+with_publication_ui: true
+header_title: MultiespectralFusion
+header_subtitle: Visible + LWIR multispectral image fusion
+header_subtitle_id: subtitle
+intro_title: What is Multispectral Fusion?
+intro_text: Multispectral fusion combines images from different spectral ranges into a single representation. This tool demonstrates static early fusion between visible (RGB) and long-wave infrared (LWIR) thermal images. Early fusion operates at pixel level, merging the raw channel data before any feature extraction. Different methods exploit different properties of each spectrum, producing outputs with unique characteristics useful for detection, segmentation, and other vision tasks.
+footer_credits_html: |
+  <p id="footer-author">Author: <a href="https://enheragu.github.io/" target="_blank" rel="noopener noreferrer">Enrique Heredia-Aguado</a></p>
+custom_css:
+  - css/style.css
+custom_js:
+  - https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js
+  - /tool-pages-theme/assets/shared/chart-legend.js
+  - js/i18n.js
+  - /tool-pages-theme/assets/js/core/pyodide-runtime.js
+  - js/app-pyfusion.js
+  - js/app-math.js
+  - js/app-compute.js
+  - js/app.js
+---
+<!--THEME_BODY-->
+  <script>window.FUSION_RELATED_WORK_URL='{{ site.shared_assets_base | default: "/assets/shared" }}/related-work.json';</script>
+  <div class="content-shell">
+    <main>
+
+      {% capture strategy_tabs %}
+        <button id="btn-strategy-static-early" class="shared-tab active" type="button"
+          role="tab" aria-selected="true" data-strategy="static-early">
+          Static Early Fusion
+        </button>
+        <button id="btn-strategy-repr" class="shared-tab" type="button"
+          role="tab" aria-selected="false" data-strategy="repr">
+          Early Reprojection Fusion
+        </button>
+        <button id="btn-strategy-alpha" class="shared-tab" type="button"
+          role="tab" aria-selected="false" data-strategy="alpha">
+          Early Adaptive &#x03B1;-Fusion
+        </button>
+      {% endcapture %}
+
+      {% capture method_tabs %}
+        <button id="btn-method-rgbt" class="shared-tab active" type="button"
+          role="tab" aria-selected="true" aria-controls="pipeline-rgbt" data-method="rgbt">RGBT</button>
+        <button id="btn-method-hsvt" class="shared-tab" type="button"
+          role="tab" aria-selected="false" aria-controls="pipeline-hsvt" data-method="hsvt">HSVT</button>
+        <button id="btn-method-vths" class="shared-tab" type="button"
+          role="tab" aria-selected="false" aria-controls="pipeline-vths" data-method="vths">VTHS</button>
+        <button id="btn-method-vt" class="shared-tab" type="button"
+          role="tab" aria-selected="false" aria-controls="pipeline-vt" data-method="vt">VT</button>
+      {% endcapture %}
+
+      {% capture method_content %}
+
+        <!-- ── Controls row (shared across all methods) ── -->
+        <div class="panel-block controls-row">
+          <div class="example-control">
+            <label id="lbl-examples" for="select-example">Example</label>
+            <select id="select-example" class="select-example">
+              <option value="0">KAIST Day</option>
+              <option value="1" selected>LLVIP</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="example-control">
+            <label id="lbl-resolution" for="select-resolution">Resolution</label>
+            <select id="select-resolution" class="select-example">
+              <option value="512" selected>Light · 512 px</option>
+              <option value="768">Balanced · 768 px</option>
+              <option value="1024">High · 1024 px</option>
+              <option value="0">Full · max RAM</option>
+            </select>
+          </div>
+          <div class="fusion-actions">
+            <button id="btn-generate" class="btn-primary" type="button">Run fusion</button>
+            <button id="btn-download-active" class="btn-secondary" type="button" disabled>Download output</button>
+          </div>
+          <p class="hint status-inline" id="status">Load a visible and a thermal image, then run fusion.</p>
+        </div>
+
+        <!-- ── Fusion diagram wrapper: source inputs + pipeline ── -->
+        <div class="fusion-diagram-wrapper">
+
+          <!-- Source inputs: center cols (grid row 1) -->
+          <div class="panel-block input-section" id="input-grid">
+            <div class="input-row">
+
+              <!-- RGB visible source card -->
+              <article class="source-card" id="card-rgb">
+                <div class="source-card-header">
+                  {% include widgets/widget_section_heading.html
+                    tag='h2'
+                    title_id='src-rgb-title'
+                    title_class='shared-panel-title'
+                    title='RGB Visible'
+                    emphasis='subtle'
+                  %}
+                  <span class="spectrum-badge spectrum-badge--visible" id="badge-rgb">Visible</span>
+                  <label class="shared-switch source-card-eq" for="chk-equalize-rgb">
+                    <input type="checkbox" id="chk-equalize-rgb" class="shared-switch__input">
+                    <span class="shared-switch__track"></span>
+                    <span id="lbl-equalize-rgb">Equalization</span>
+                  </label>
+                </div>
+                {% include widgets/widget_image_card.html
+                  slot='rgb'
+                  canvas_id='preview-rgb'
+                  file_input_id='file-rgb'
+                  drop_hint_id='drop-hint-rgb'
+                %}
+              </article>
+
+              <!-- LWIR thermal source card -->
+              <article class="source-card" id="card-lwir">
+                <div class="source-card-header">
+                  {% include widgets/widget_section_heading.html
+                    tag='h2'
+                    title_id='src-lwir-title'
+                    title_class='shared-panel-title'
+                    title='LWIR Thermal'
+                    emphasis='subtle'
+                  %}
+                  <span class="spectrum-badge spectrum-badge--thermal" id="badge-lwir">Thermal</span>
+                  <label class="shared-switch source-card-eq" for="chk-equalize-lwir">
+                    <input type="checkbox" id="chk-equalize-lwir" class="shared-switch__input">
+                    <span class="shared-switch__track"></span>
+                    <span id="lbl-equalize-lwir">Equalization</span>
+                  </label>
+                </div>
+                {% include widgets/widget_image_card.html
+                  slot='lwir'
+                  canvas_id='preview-lwir'
+                  file_input_id='file-lwir'
+                  drop_hint_id='drop-hint-lwir'
+                %}
+              </article>
+
+            </div>
+          </div>
+
+          <!-- RGB histogram: outer left col (grid row 2, shares row with pipeline) -->
+          {% include widgets/widget_plot_card.html
+            tag='div'
+            card_id='hist-rgb-card'
+            title='RGB Histogram'
+            title_id='hist-rgb-title'
+            button_id='btn-expand-hist-rgb'
+            canvas_id='hist-rgb'
+            canvas_class='shared-plot-canvas hist-canvas'
+          %}
+
+          <!-- LWIR histogram: outer right col (grid row 2, shares row with pipeline) -->
+          {% include widgets/widget_plot_card.html
+            tag='div'
+            card_id='hist-lwir-card'
+            title='LWIR Histogram'
+            title_id='hist-lwir-title'
+            button_id='btn-expand-hist-lwir'
+            canvas_id='hist-lwir'
+            canvas_class='shared-plot-canvas hist-canvas'
+          %}
+
+          <!-- ── Method-specific pipeline diagrams ── -->
+          <div class="pipeline-container">
+            <div id="pipeline-rgbt"        class="pipeline-diagram"        role="tabpanel" aria-labelledby="btn-method-rgbt"></div>
+            <div id="pipeline-hsvt"        class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-hsvt"></div>
+            <div id="pipeline-vths"        class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-vths"></div>
+            <div id="pipeline-vt"          class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-vt"></div>
+            <div id="pipeline-wavelet"     class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-wavelet"></div>
+            <div id="pipeline-waveletmax"  class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-waveletmax"></div>
+            <div id="pipeline-curvelet"    class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-curvelet"></div>
+            <div id="pipeline-curveletmax" class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-curveletmax"></div>
+            <div id="pipeline-pca"         class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-pca"></div>
+            <div id="pipeline-fa"          class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-fa"></div>
+            <div id="pipeline-sobel"       class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-sobel"></div>
+            <div id="pipeline-ssim"        class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-ssim"></div>
+            <div id="pipeline-superpixel"  class="pipeline-diagram hidden" role="tabpanel" aria-labelledby="btn-method-superpixel"></div>
+          </div>
+
+        </div>
+
+      {% endcapture %}
+
+      {% capture strategy_content %}
+
+        <p class="hint strategy-hint" id="strategy-hint">
+          Static early fusion merges raw pixel data before any processing. The visible and thermal images are combined at the channel level using fixed mathematical operations.
+        </p>
+        <p class="hint strategy-hint hidden" id="strategy-hint-repr">
+          Early reprojection fusion applies a frequency or statistical decomposition to each channel before fusion. The transformed coefficients from RGB and thermal are combined per-band, then the result is projected back to a 3-channel image space.
+        </p>
+        <p class="hint strategy-hint hidden" id="strategy-hint-alpha">
+          Early adaptive &#x03B1;-fusion computes a per-pixel blending weight &#x03B1; from a local saliency measure (gradient, variance, or patch contrast). Each output channel is formed as &#x03B1;&#xB7;RGB + (1&#x2212;&#x03B1;)&#xB7;T, letting the most informative source dominate at each location.
+        </p>
+
+        <div class="method-shell shared-tabbed-stack shared-tabbed-shell shared-tabbed-shell-strip">
+
+          <!-- Static-early method tabs -->
+          <div id="method-tabs" class="shared-tablist shared-tablist-joined shared-tablist-fill" role="tablist" aria-label="Fusion method">
+            {{ method_tabs }}
+          </div>
+
+          <!-- Reprojection method tabs (hidden until strategy is active) -->
+          <div id="method-tabs-repr" class="shared-tablist shared-tablist-joined shared-tablist-fill hidden" role="tablist" aria-label="Fusion method">
+            <button id="btn-method-wavelet"     class="shared-tab active" type="button"
+              role="tab" aria-selected="true"  aria-controls="pipeline-wavelet"     data-method="wavelet">Wavelet avg</button>
+            <button id="btn-method-waveletmax"  class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-waveletmax"  data-method="waveletmax">Wavelet max</button>
+            <button id="btn-method-curvelet"    class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-curvelet"    data-method="curvelet">Curvelet avg</button>
+            <button id="btn-method-curveletmax" class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-curveletmax" data-method="curveletmax">Curvelet max</button>
+            <button id="btn-method-pca"         class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-pca"         data-method="pca">PCA</button>
+            <button id="btn-method-fa"          class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-fa"          data-method="fa">FA</button>
+          </div>
+
+          <!-- Alpha-fusion method tabs (hidden until strategy is active) -->
+          <div id="method-tabs-alpha" class="shared-tablist shared-tablist-joined shared-tablist-fill hidden" role="tablist" aria-label="Fusion method">
+            <button id="btn-method-sobel"      class="shared-tab active" type="button"
+              role="tab" aria-selected="true"  aria-controls="pipeline-sobel"      data-method="sobel">Sobel Weighted</button>
+            <button id="btn-method-ssim"       class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-ssim"       data-method="ssim">SSIM</button>
+            <button id="btn-method-superpixel" class="shared-tab" type="button"
+              role="tab" aria-selected="false" aria-controls="pipeline-superpixel" data-method="superpixel">Superpixel</button>
+          </div>
+
+          <!-- Shared panel: controls + inputs + pipeline -->
+          <div class="shared-tabbed-panel">
+            {{ method_content }}
+          </div>
+
+        </div>
+
+      {% endcapture %}
+
+      {% include widgets/widget_tabbed_box.html
+        tablist_id='strategy-tabs'
+        aria_label='Fusion strategy'
+        tabs=strategy_tabs
+        content=strategy_content
+        class='strategy-shell'
+        fill=true
+      %}
+
+    </main>
+  </div>
+
+  <!-- ── Image expand modal (lightbox) ── -->
+  <section id="image-modal-overlay" class="chart-modal-overlay hidden" aria-hidden="true">
+    <div class="image-modal" role="dialog" aria-modal="true" aria-labelledby="image-modal-title">
+      <h3 id="image-modal-title" class="sr-only">Image preview</h3>
+      <div class="image-modal-body shared-lightbox-stage">
+        <div class="image-modal-controls shared-corner-controls">
+          <button id="btn-download-image-modal" class="btn-preview-icon shared-icon-btn shared-icon-btn-sm" type="button" aria-label="Download" title="Download">
+            <span aria-hidden="true" class="icon-close">
+              <svg viewBox="0 0 24 24" width="18" height="18" role="presentation" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4v11M8 11l4 4 4-4M5 20h14"/>
+              </svg>
+            </span>
+          </button>
+          <button id="btn-close-image-modal" class="btn-preview-icon btn-modal-close shared-icon-btn shared-close-btn" type="button" aria-label="Close" title="Close">
+            <span aria-hidden="true" class="icon-close">
+              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+        <canvas id="image-modal-canvas" class="shared-lightbox-media shared-lightbox-frame" width="960" height="540"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Histogram expand modal (chart-modal style) ── -->
+  <section id="hist-modal-overlay" class="chart-modal-overlay hidden" aria-hidden="true">
+    <div class="hist-modal chart-modal" role="dialog" aria-modal="true" aria-labelledby="hist-modal-title">
+      <div class="chart-modal-head">
+        <h3 id="hist-modal-title" class="shared-plot-modal-title">Histogram</h3>
+        <label class="shared-switch hist-log-toggle" for="hist-log-scale">
+          <input type="checkbox" id="hist-log-scale" class="shared-switch__input">
+          <span class="shared-switch__track"></span>
+          <span id="lbl-hist-log">Log scale</span>
+        </label>
+        <button id="btn-close-hist-modal" class="btn-outline btn-chart-close" type="button" aria-label="Close" title="Close"></button>
+      </div>
+      <div class="hist-modal-body">
+        <canvas id="hist-modal-canvas" class="shared-plot-canvas hist-canvas"></canvas>
+      </div>
+    </div>
+  </section>
+

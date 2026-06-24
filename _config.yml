@@ -1,0 +1,26 @@
+title: MultiespectralFusion
+url: https://enheragu.github.io
+baseurl: /multiespectral-fusion
+
+plugins:
+  - jekyll-remote-theme
+
+remote_theme: enheragu/tool-pages-theme
+
+shared_assets_base: /multiespectral-fusion/assets/shared
+
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      lang: en
+      compact_mode: true
+      project: fusion
+      tool_name: MultiespectralFusion
+      analytics_measurement_id: G-WCN9W8THEH
+      footer_related_contextual: true
+      with_tabs: true
+      with_image_card: true
+      with_lightbox_stage: true
+      with_chart_interactions: true

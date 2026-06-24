@@ -1,0 +1,887 @@
+/* ============================================================
+   MultiespectralFusion – tool-specific styles
+   Extends tool-pages-theme; does not duplicate shared classes.
+   ============================================================ */
+
+/* ── Channel colour tokens ──────────────────────────────────── */
+:root {
+  --clr-ch-r:    #E3474A;
+  --clr-ch-g:    var(--pal-green);
+  --clr-ch-b:    var(--pal-blue);
+  --clr-ch-t:    var(--clr-thermal);   /* thermal / LWIR */
+  --clr-ch-h:    var(--pal-purple);   /* Hue */
+  --clr-ch-s:    #40C8C8;   /* Saturation */
+  --clr-ch-v:    #C8C830;   /* Value / Intensity */
+  --clr-ch-hs:   #C884E0;   /* Compressed HS */
+  --clr-ch-pc1:  #FF6B9D;   /* PCA component 1 */
+  --clr-ch-pc2:  #9D4EDD;   /* PCA component 2 */
+  --clr-ch-pc3:  #06D6A0;   /* PCA component 3 */
+  --clr-ch-f1:   #FF9F1C;   /* FA factor 1 */
+  --clr-ch-f2:   #7BC67E;   /* FA factor 2 */
+  --clr-ch-f3:   #74B3CE;   /* FA factor 3 */
+  --clr-ch-alpha: #B07CE8;  /* α / weight map (adaptive fusion) — violet, kept clearly distinct from thermal orange */
+  --clr-visible: var(--pal-blue);
+  --clr-thermal: #FF8C00;
+}
+
+/* ── Fusion diagram wrapper: 4-col grid anchors all SVG overlays ── */
+/*
+ * Columns: 2fr (hist-rgb) | 3fr (source RGB) | 3fr (source LWIR) | 2fr (hist-lwir)
+ * Row 1: source images (cols 2-3)
+ * Row 2: hist-rgb (col 1) | pipeline (cols 2-3) | hist-lwir (col 4)
+ */
+.fusion-diagram-wrapper {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2fr 3fr 3fr 2fr;
+  grid-template-rows: auto auto;
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+  align-items: start;
+}
+
+/* Source image section: center columns, row 1 */
+#input-grid {
+  grid-column: 2 / 4;
+  grid-row: 1;
+}
+
+/* Histograms: outer columns, row 2 — share vertical space with pipeline.
+   z-index keeps them above the pipeline diagram, whose wide connector SVG /
+   op-rows (z-index:2) overflow their centre columns and would otherwise sit on
+   top of the histogram cards — stealing clicks from the expand button (the RGB
+   one was unclickable) and bleeding lines over the cards. */
+#hist-rgb-card  { grid-column: 1; grid-row: 2; position: relative; z-index: 3; }
+#hist-lwir-card { grid-column: 4; grid-row: 2; position: relative; z-index: 3; }
+
+/* Log/linear scale toggle in the histogram modal header: push it to the right,
+   sitting just before the close button (reuses the shared .eq-toggle switch so
+   the active state reads clearly). */
+.hist-log-toggle { margin-left: auto; margin-right: 0.6rem; font-size: var(--txt-sm, 0.85rem); }
+
+/* Pipeline: center columns, row 2 */
+.pipeline-container {
+  grid-column: 2 / 4;
+  grid-row: 2;
+}
+
+/* Unified pipeline flow SVG: spans full wrapper (input section → pipeline).
+ * z-index: 1 places it above page background but below stage cards (z-index: 2). */
+.pipeline-flow-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+
+/* ── Source input section: source images only (histograms live at wrapper level) ── */
+.input-section {
+  border-bottom: none !important; /* Remove panel-block separator */
+}
+
+/* Input row: two source images side by side (histograms live at wrapper level now) */
+.input-row {
+  display: flex;
+  gap: 1rem;
+}
+.input-row > .source-card { flex: 1 1 0; min-width: 0; }
+
+/* Responsive wrapper grid */
+@media (max-width: 62.5em) {
+  .fusion-diagram-wrapper {
+    grid-template-columns: 1fr 1fr;
+  }
+  #input-grid     { grid-column: 1 / -1; grid-row: 1; }
+  #hist-rgb-card  { grid-column: 1;      grid-row: 2; }
+  .diagram-aside  { grid-column: 2;      grid-row: 2; align-self: start; }
+  .pipeline-container { grid-column: 1 / -1; grid-row: 3; }
+}
+
+@media (max-width: 40em) {
+  .fusion-diagram-wrapper {
+    grid-template-columns: 1fr;
+  }
+  #input-grid, #hist-rgb-card, .diagram-aside, .pipeline-container {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .diagram-aside { align-self: start; }
+  .input-row { flex-direction: column; }
+}
+
+/* ── Source cards (reuse HarrisShutter pattern) ─────────────── */
+.source-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.source-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: none;
+}
+
+
+/* ── Histogram ──────────────────────────────────────────────── */
+.histogram-wrap {
+  width: 100%;
+  height: 48px;
+  border-radius: calc(var(--radius) / 2);
+  overflow: hidden;
+  background: var(--clr-surface);
+}
+
+.histogram-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Switch styling now comes from the theme's .shared-switch
+   (tool-pages-theme/assets/shared/form-controls.css). The tool keeps only the
+   positioning modifiers (.source-card-eq, .hist-log-toggle) below. */
+
+/* Equalization toggle inline in source card header */
+.source-card-eq {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Example select ─────────────────────────────────────────── */
+/* Border/radius/background/colour come from the theme's `select` rule (already
+   dark-mode aware via --clr-surface / --clr-text — the earlier tool override used
+   non-dark tokens, which was the white-box-at-night bug). Tool only sets compact
+   sizing + color-scheme so the native dropdown popup follows the active theme. */
+.select-example {
+  font-size: var(--txt-sm);
+  padding: 0.25rem 0.5rem;
+  color-scheme: light dark;
+  cursor: pointer;
+}
+
+/* ── Preview wrap ────────────────────────────────────────────── */
+.preview-wrap {
+  position: relative;
+  border-radius: calc(var(--radius) / 2);
+  overflow: hidden;
+  background: var(--clr-surface);
+  aspect-ratio: 16/9;
+  cursor: pointer;
+}
+
+.preview-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.preview-actions {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.preview-wrap:hover .preview-actions,
+.preview-wrap:focus-within .preview-actions {
+  opacity: 1;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--txt-sm);
+  color: var(--clr-muted);
+  text-align: center;
+  padding: 1rem;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.preview-wrap.has-image .drop-overlay {
+  opacity: 0;
+}
+
+.preview-wrap.drag-over {
+  outline: 2px dashed var(--clr-primary, #58A6FF);
+  outline-offset: -2px;
+}
+
+/* ── Spectrum badge ──────────────────────────────────────────── */
+.spectrum-badge {
+  font-size: var(--txt-xs);
+  padding: 0.1em 0.5em;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.spectrum-badge--visible {
+  background: color-mix(in srgb, var(--clr-visible) 18%, transparent);
+  color: var(--clr-visible);
+  border: 1px solid color-mix(in srgb, var(--clr-visible) 40%, transparent);
+}
+
+.spectrum-badge--thermal {
+  background: color-mix(in srgb, var(--clr-thermal) 18%, transparent);
+  color: var(--clr-thermal);
+  border: 1px solid color-mix(in srgb, var(--clr-thermal) 40%, transparent);
+}
+
+/* ── Controls row ────────────────────────────────────────────── */
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.example-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Run + Download are two distinct actions, NOT a segmented equal-width pair, so
+   they use a plain flex row (natural widths) instead of .shared-btn-group--2
+   (which forced both to 50% and squashed "Download output"'s padding). Button
+   styles still come from the theme (.btn-primary / .btn-secondary). */
+.fusion-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Status message: pushed to the right within controls-row */
+.status-inline {
+  margin: 0;
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* .hint comes from the theme (app-shell.css: --txt-xs, muted) — no override. */
+
+/* Status message state variants */
+#status.status--error   { color: var(--clr-status-error); }
+#status.status--success { color: var(--clr-status-success); }
+
+/* Plot card internal layout (mirrors comparison-shell.css pattern) */
+.panel-chart {
+  padding: 0.65rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-chart .card-headline {
+  margin: 0 0 0.4rem;
+  padding: 0;
+}
+
+.chart-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 140px;
+}
+
+/* Histogram canvas fills the chart-wrap */
+.hist-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Inline histograms: fixed-height chart-wrap + static canvas so Chart.js
+   measures dimensions correctly (position:absolute conflicts with its inline styles) */
+#hist-rgb-card .chart-wrap,
+#hist-lwir-card .chart-wrap {
+  height: 150px;
+  min-height: unset;
+  flex: none;
+}
+
+#hist-rgb,
+#hist-lwir {
+  position: static;
+  inset: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Fusion strategy shell ───────────────────────────────────── */
+.strategy-shell > .shared-tabbed-panel {
+  padding: 0.9rem 1rem 0.8rem;
+}
+
+.strategy-hint {
+  margin: 0 0 0.5rem;
+}
+
+/* Clear separation between the strategy intro (hint + per-method bullets) and
+   the method-tabs box below it. */
+.strategy-methods-list { margin-bottom: 1.3rem; }
+
+/* Method shell: small side padding so the diagram (histograms included) keeps a
+   margin from the box border instead of touching it; top padding for breathing
+   from the tab strip. Bottom 0 so the bottom-tabs strip connects flush. */
+.method-shell > .shared-tabbed-panel {
+  padding: 0.55rem 0.7rem 0;
+  overflow: hidden;
+}
+
+/* Inner method shell nested inside strategy — no extra bottom margin */
+.strategy-shell .method-shell {
+  margin-bottom: 0;
+}
+
+/* ── Pipeline container ──────────────────────────────────────── */
+.pipeline-container {
+  min-height: 12rem;
+  padding-top: 0.5rem;
+}
+
+.pipeline-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 2.5rem;  /* consistent vertical rhythm between op-rows and stage rows */
+  position: relative;
+}
+
+/* SVG for input-section card→histogram connections */
+.input-conn-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+/* Hide plain gray arrow when SVG connections are drawn */
+.has-flow-connections .pipeline-conn-arrow {
+  visibility: hidden;
+}
+
+.pipeline-diagram.hidden {
+  display: none;
+}
+
+/* ── Pipeline stages ─────────────────────────────────────────── */
+.pipeline-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  z-index: 2; /* above pipeline-flow-svg (z-1) */
+}
+
+.pipeline-stage-label {
+  width: 100%;
+  text-align: center;
+  font-size: var(--txt-xs);
+  color: var(--clr-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Pipeline op-node row (centers the op-node badge) ────────── */
+.pipeline-op-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 0.4rem 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Pipeline op-node: a proper flow node (badge pill) ────────── */
+.pipe-op-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2em 0.9em;
+  border-radius: 999px;
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-border);
+  font-size: var(--txt-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  cursor: default;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Pipeline connectors (legacy — kept for compatibility) ────── */
+/* No explicit z-index → renders behind SVG overlays (z-1) but above page bg.
+ * This ensures the connector label background does not cover connection lines. */
+.pipeline-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  width: 100%;
+  position: relative;
+}
+
+.pipeline-conn-arrow {
+  width: 2px;
+  height: 2rem;
+  background: var(--clr-border);
+  position: relative;
+}
+
+.pipeline-conn-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--clr-border);
+}
+
+.pipeline-conn-label {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  padding: 0.15em 0.75em;
+  font-size: var(--txt-xs);
+  color: var(--clr-muted);
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+/* First pipeline connector (no incoming arrow — bridge handles the entry visual) */
+.pipeline-connector--entry {
+  padding-top: 0.1rem;
+}
+
+/* Spacer between visible-spectrum channel cards and thermal channel card */
+.pipe-stage-spacer {
+  width: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* Multi-line split connector (one-to-many) */
+.pipeline-conn-fork {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.pipeline-conn-fork-line {
+  width: 2px;
+  height: 1.5rem;
+}
+
+/* ── Pipeline operator inline ────────────────────────────────── */
+.pipeline-op {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--txt-xl);
+  font-weight: 300;
+  color: var(--clr-muted);
+  min-width: 2rem;
+  align-self: center;
+  padding-top: 1.5rem; /* align with canvas tops roughly */
+}
+
+/* ── Pipeline card (individual image box) ────────────────────── */
+.pipe-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.pipe-card-label {
+  font-size: var(--txt-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--clr-muted);
+  text-align: center;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* Channel-coloured label backgrounds */
+.pipe-card--r    .pipe-card-label { color: var(--clr-ch-r); background: color-mix(in srgb, var(--clr-ch-r) 12%, transparent); }
+.pipe-card--g    .pipe-card-label { color: var(--clr-ch-g); background: color-mix(in srgb, var(--clr-ch-g) 12%, transparent); }
+.pipe-card--b    .pipe-card-label { color: var(--clr-ch-b); background: color-mix(in srgb, var(--clr-ch-b) 12%, transparent); }
+.pipe-card--t    .pipe-card-label { color: var(--clr-ch-t); background: color-mix(in srgb, var(--clr-ch-t) 12%, transparent); }
+.pipe-card--h    .pipe-card-label { color: var(--clr-ch-h); background: color-mix(in srgb, var(--clr-ch-h) 12%, transparent); }
+.pipe-card--s    .pipe-card-label { color: var(--clr-ch-s); background: color-mix(in srgb, var(--clr-ch-s) 12%, transparent); }
+.pipe-card--v    .pipe-card-label { color: var(--clr-ch-v); background: color-mix(in srgb, var(--clr-ch-v) 12%, transparent); }
+.pipe-card--hs   .pipe-card-label { color: var(--clr-ch-hs); background: color-mix(in srgb, var(--clr-ch-hs) 12%, transparent); }
+.pipe-card--rgb  .pipe-card-label { color: var(--clr-visible); background: color-mix(in srgb, var(--clr-visible) 12%, transparent); }
+.pipe-card--lwir .pipe-card-label { color: var(--clr-thermal); background: color-mix(in srgb, var(--clr-thermal) 12%, transparent); }
+.pipe-card--out  .pipe-card-label { color: var(--clr-primary, #58A6FF); background: color-mix(in srgb, var(--clr-primary, #58A6FF) 12%, transparent); }
+.pipe-card--pc1  .pipe-card-label { color: var(--clr-ch-pc1); background: color-mix(in srgb, var(--clr-ch-pc1) 12%, transparent); }
+.pipe-card--pc2  .pipe-card-label { color: var(--clr-ch-pc2); background: color-mix(in srgb, var(--clr-ch-pc2) 12%, transparent); }
+.pipe-card--pc3  .pipe-card-label { color: var(--clr-ch-pc3); background: color-mix(in srgb, var(--clr-ch-pc3) 12%, transparent); }
+.pipe-card--f1   .pipe-card-label { color: var(--clr-ch-f1);  background: color-mix(in srgb, var(--clr-ch-f1)  12%, transparent); }
+.pipe-card--f2   .pipe-card-label { color: var(--clr-ch-f2);  background: color-mix(in srgb, var(--clr-ch-f2)  12%, transparent); }
+.pipe-card--f3    .pipe-card-label { color: var(--clr-ch-f3);   background: color-mix(in srgb, var(--clr-ch-f3)   12%, transparent); }
+.pipe-card--alpha .pipe-card-label { color: var(--clr-ch-alpha); background: color-mix(in srgb, var(--clr-ch-alpha) 12%, transparent); }
+
+/* Canvas wrapper within pipe-card */
+.pipe-card-wrap {
+  position: relative;
+  border-radius: calc(var(--radius) / 2);
+  overflow: hidden;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+}
+
+/* Channel-coloured top border */
+.pipe-card--r    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-r); }
+.pipe-card--g    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-g); }
+.pipe-card--b    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-b); }
+.pipe-card--t    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-t); }
+.pipe-card--h    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-h); }
+.pipe-card--s    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-s); }
+.pipe-card--v    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-v); }
+.pipe-card--hs   .pipe-card-wrap { border-top: 2px solid var(--clr-ch-hs); }
+.pipe-card--rgb  .pipe-card-wrap { border-top: 2px solid var(--clr-visible); }
+.pipe-card--lwir .pipe-card-wrap { border-top: 2px solid var(--clr-thermal); }
+.pipe-card--out  .pipe-card-wrap { border-top: 2px solid var(--clr-primary, #58A6FF); border-width: 1px; border-top-width: 2px; }
+.pipe-card--pc1  .pipe-card-wrap { border-top: 2px solid var(--clr-ch-pc1); }
+.pipe-card--pc2  .pipe-card-wrap { border-top: 2px solid var(--clr-ch-pc2); }
+.pipe-card--pc3  .pipe-card-wrap { border-top: 2px solid var(--clr-ch-pc3); }
+.pipe-card--f1   .pipe-card-wrap { border-top: 2px solid var(--clr-ch-f1); }
+.pipe-card--f2   .pipe-card-wrap { border-top: 2px solid var(--clr-ch-f2); }
+.pipe-card--f3    .pipe-card-wrap { border-top: 2px solid var(--clr-ch-f3); }
+.pipe-card--alpha .pipe-card-wrap { border-top: 2px solid var(--clr-ch-alpha); }
+
+.pipe-card-canvas {
+  display: block;
+  width: 160px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.pipe-card-canvas--sm {
+  width: 120px;
+  height: 68px;
+}
+
+.pipe-card-canvas--lg {
+  width: 220px;
+  height: 124px;
+}
+
+.pipe-card-canvas--xl {
+  width: 320px;
+  height: 180px;
+}
+
+/* Placeholder shown while no image is loaded */
+.pipe-card-canvas.empty {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+/* Expand button on pipe card */
+.pipe-card-expand {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.pipe-card-wrap:hover .pipe-card-expand {
+  opacity: 1;
+}
+
+/* Subtle per-card download icon (top-left, mirrors the expand button) */
+.pipe-card-download {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pipe-card-wrap:hover .pipe-card-download,
+.pipe-card-download:focus-visible {
+  opacity: 1;
+}
+
+/* Actions row below output card */
+.pipe-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* ── Description tooltip/text below connector ─────────────────── */
+.pipe-card-desc {
+  font-size: var(--txt-sm);
+  color: var(--clr-muted);
+  text-align: center;
+  max-width: 10rem;
+  line-height: 1.35;
+}
+
+/* ── Responsive tweaks ────────────────────────────────────────── */
+@media (max-width: 45em) {
+  .pipe-card-canvas { width: 110px; height: 62px; }
+  .pipe-card-canvas--sm { width: 84px; height: 47px; }
+  .pipe-card-canvas--lg { width: 160px; height: 90px; }
+  .pipe-card-canvas--xl { width: 220px; height: 124px; }
+
+  .pipeline-stage { gap: 0.4rem; }
+  .pipeline-op { font-size: 1.1rem; min-width: 1.2rem; }
+}
+
+/* ── Expand modal (matches HarrisShutter standard) ─────────────── */
+#image-modal-overlay {
+  z-index: 2200;
+  background: var(--clr-overlay-strong, rgba(0,0,0,0.72));
+  backdrop-filter: blur(2px);
+}
+
+.image-modal {
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  max-height: none;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+}
+
+.image-modal-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* ── Histogram expand modal ───────────────────────────────────── */
+#hist-modal-overlay {
+  z-index: 2200;
+  background: var(--clr-overlay-medium, rgba(0,0,0,0.60));
+}
+
+.hist-modal {
+  width: min(96vw, 1150px);
+  height: min(90vh, 760px);
+  padding: .9rem 1rem 1rem;
+  border-radius: var(--radius, 8px);
+  box-shadow: var(--shadow-modal-lg);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.hist-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.5rem;
+}
+
+#hist-modal-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: static;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 10px;
+}
+
+/* ── Pipeline operation badge (SVG rect needs solid fill) ────── */
+.pipeline-op-badge-rect {
+  fill: var(--clr-surface);
+}
+
+/* ── Pending/empty pipeline notice ────────────────────────────── */
+.pipeline-empty-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--clr-muted);
+  text-align: center;
+}
+
+.pipeline-empty-notice svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  opacity: 0.4;
+}
+
+.pipeline-empty-notice p {
+  font-size: var(--txt-sm);
+  max-width: 28rem;
+}
+
+/* ── Example mode: disable browse/drop, show zoom cursor ─────── */
+.source-card.mode-example .file-input-native {
+  pointer-events: none;
+}
+
+.source-card.mode-example .preview-wrap {
+  cursor: zoom-in;
+}
+
+/* Hide "Drag & drop or click to choose" hint always in example mode */
+.source-card.mode-example .drop-overlay {
+  display: none;
+}
+
+/* Hide clear button in example mode – examples can't be cleared manually */
+.source-card.mode-example .btn-preview-delete {
+  display: none;
+}
+
+/* ── Bottom tabs (multispectral-specific) ─────────────────────────────────
+   Cloned into the EXISTING method & strategy shells as their bottom edge: each
+   bottom tablist is a direct child of the very shell it belongs to, so it
+   REUSES that shell's own .shared-tabbed-shell-strip tab styling (no duplicated
+   CSS, no extra box). A CSS transform flips it vertically and the labels are
+   counter-flipped upright. Revealed only when the top tabs scroll out of view
+   (observer toggles .show-bottom-tabs on the outer shell). */
+.shared-tablist.bottom-mirror {
+  display: none !important;
+  transform: scaleY(-1);
+  transform-origin: center;
+  margin-top: -1px;
+}
+.shared-tablist.bottom-mirror .mirror-label { display: inline-block; transform: scaleY(-1); }
+.strategy-shell.show-bottom-tabs .shared-tablist.bottom-mirror { display: flex !important; }
+.strategy-shell.show-bottom-tabs .shared-tablist.bottom-mirror.hidden { display: none !important; }
+/* Flatten the box bottoms so the flipped tabs attach as a seamless bottom edge. */
+.strategy-shell.show-bottom-tabs > .shared-tabbed-panel,
+.strategy-shell.show-bottom-tabs .method-shell > .shared-tabbed-panel {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+#top-tabs-sentinel { height: 1px; margin: 0; padding: 0; pointer-events: none; }
+
+/* Breathing room so the output card / download button doesn't touch the box
+   border at the bottom of the content panel. */
+.fusion-diagram-wrapper { padding-bottom: 0.85rem; }
+
+/* ── Pyodide fallback indicator (fidelity safeguard) ──────────────────────
+   When the faithful Python output can't be produced, the JS approximation is
+   shown but the output card is flagged (dashed warn outline + ⚠) and the
+   status line warns, instead of swapping silently. */
+.status--warn { color: var(--clr-status-warning); font-weight: 600; }
+.pipe-card--py-fallback .pipe-card-wrap {
+  outline: 2px dashed var(--clr-ch-alpha, #E8A838);
+  outline-offset: 2px;
+}
+.pipe-card--py-fallback .pipe-card-label::after {
+  content: ' \26A0';
+  color: var(--clr-ch-alpha, #E8A838);
+}
+
+/* Per-method bullet lists under each strategy intro (reuse of i18n methodDesc). */
+.strategy-methods-list {
+  margin: 0.45rem 0 0.2rem;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: var(--txt-sm-plus);
+  line-height: 1.45;
+}
+.strategy-methods-list.hidden { display: none; }
+.strategy-methods-list li { list-style: disc; }
+
+/* Contextual "how to read this diagram" walkthrough BESIDE the diagram: it lives
+   in the right column (.diagram-aside) under the LWIR histogram and sticks while
+   the tall pipeline is scrolled, so it's always visible without burying it below. */
+.diagram-aside {
+  grid-column: 4;
+  grid-row: 2;
+  align-self: stretch;     /* fill the pipeline-tall row → sticky panel follows the whole scroll */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.diagram-explain {
+  position: sticky;
+  top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--clr-border);
+  border-left: 3px solid var(--clr-primary, #58A6FF);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--clr-surface, #fff) 60%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--clr-muted, inherit);
+}
+.diagram-explain.hidden { display: none; }
+.diagram-explain .diagram-explain-title {
+  display: block;
+  color: var(--clr-text);
+  margin-bottom: 0.25rem;
+}
+.diagram-explain p { margin: 0; }
+.diagram-explain .diagram-explain-legend {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--clr-border);
+  font-size: var(--txt-xs);
+  color: var(--clr-muted);
+}
+
+/* Visible download icon on the prominent output thumbnail (top-left; the expand
+   icon stays top-right on hover). Replaces the old text "Download" button. */
+.pipe-card-download-vis {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  opacity: 0.85;
+}
+.pipe-card-download-vis:hover { opacity: 1; }

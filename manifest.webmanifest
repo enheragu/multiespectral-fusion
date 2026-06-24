@@ -1,0 +1,17 @@
+{
+  "name": "MultiespectralFusion",
+  "short_name": "MSFusion",
+  "description": "Interactive demo of multispectral image fusion combining visible (RGB) and thermal (LWIR) spectra.",
+  "start_url": "/multiespectral-fusion/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "/multiespectral-fusion/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

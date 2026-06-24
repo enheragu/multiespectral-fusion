@@ -1,0 +1,25 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Logs and temp
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Working backups (local only — created while editing)
+*.bak
+*.bak_*
+
+# Local Jekyll preview artifacts
+_site/
+.jekyll-cache/
+_config.local.yml
+_includes/tool_*.html
+
+# Python (keep the vendored py/ reference sources; ignore caches/compiled)
+__pycache__/
+*.pyc
+.mypy_cache/
