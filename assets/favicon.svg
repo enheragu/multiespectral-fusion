@@ -1,28 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <defs>
-    <clipPath id="left-half">
-      <rect x="0" y="0" width="32" height="64"/>
-    </clipPath>
-    <clipPath id="right-half">
-      <rect x="32" y="0" width="32" height="64"/>
-    </clipPath>
-    <linearGradient id="visible-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#58A6FF"/>
-      <stop offset="50%" stop-color="#3FB950"/>
-      <stop offset="100%" stop-color="#E3474A"/>
-    </linearGradient>
-    <linearGradient id="thermal-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2D0A00"/>
-      <stop offset="40%" stop-color="#C85000"/>
-      <stop offset="100%" stop-color="#FFDD00"/>
-    </linearGradient>
-  </defs>
-  <!-- Left half: visible spectrum -->
-  <circle cx="32" cy="32" r="28" fill="url(#visible-grad)" clip-path="url(#left-half)"/>
-  <!-- Right half: thermal spectrum -->
-  <circle cx="32" cy="32" r="28" fill="url(#thermal-grad)" clip-path="url(#right-half)"/>
-  <!-- Dividing line (fusion) -->
-  <line x1="32" y1="4" x2="32" y2="60" stroke="white" stroke-width="1.5" opacity="0.7"/>
-  <!-- Center merge symbol -->
-  <circle cx="32" cy="32" r="5" fill="white" opacity="0.9"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Multiespectral Fusion favicon">
+  <rect width="64" height="64" rx="12" fill="#0d1117"/>
+  <rect x="4" y="4" width="56" height="56" rx="9" fill="#161b22"/>
+  <!-- Fusion mark: four channel bars combined (matches the og-image) -->
+  <g fill="none" stroke-width="6.5" stroke-linecap="round">
+    <line x1="32" y1="14" x2="32" y2="50" stroke="#E3474A"/>   <!-- R | -->
+    <line x1="14" y1="32" x2="50" y2="32" stroke="#3FB950"/>   <!-- G - -->
+    <line x1="19" y1="19" x2="45" y2="45" stroke="#58A6FF"/>   <!-- B \ -->
+    <line x1="19" y1="45" x2="45" y2="19" stroke="#FF8C00"/>   <!-- T / -->
+  </g>
 </svg>

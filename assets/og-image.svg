@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Multiespectral Fusion - social preview">
+  <style>
+    :root {
+      --c-bg-1:    #0b0f14;
+      --c-bg-2:    #0d1117;
+      --c-surface: #161b22;
+      --c-border:  #3e464e;
+      --c-text:    #e6edf3;
+      --c-sub:     #8b949e;
+      --c-field:   #0d1117;
+      --c-dim:     #3d4651;
+    }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--c-bg-1)"/>
+      <stop offset="100%" stop-color="var(--c-bg-2)"/>
+    </linearGradient>
+    <!-- Asterisk: four bars. Each bar's colour is a variable defaulting to dim,
+         so a channel can light up just one bar and the fused tile all four. -->
+    <symbol id="ast" viewBox="0 0 120 120">
+      <g fill="none" stroke-width="12" stroke-linecap="round">
+        <line x1="60" y1="20" x2="60" y2="100" stroke="var(--bv, var(--c-surface))"/>
+        <line x1="20" y1="60" x2="100" y2="60" stroke="var(--bh, var(--c-surface))"/>
+        <line x1="31" y1="31" x2="89" y2="89" stroke="var(--bd, var(--c-surface))"/>
+        <line x1="31" y1="89" x2="89" y2="31" stroke="var(--ba, var(--c-surface))"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="68" y="58" width="1064" height="514" rx="22" fill="var(--c-surface)" stroke="var(--c-border)"/>
+
+  <text x="112" y="152" fill="#58a6ff" font-size="70" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Multiespectral Fusion</text>
+  <text x="112" y="210" fill="var(--c-text)" font-size="42" font-family="Segoe UI, Arial, sans-serif">Visible (RGB) + LWIR thermal fusion</text>
+
+  <!-- Four channel tiles: asterisk with only one bar lit in its channel colour -->
+  <g stroke="var(--c-border)" stroke-width="4">
+    <rect x="249" y="267" width="121" height="121" rx="18" fill="#E3474A"/>
+    <rect x="387" y="267" width="121" height="121" rx="18" fill="#3FB950"/>
+    <rect x="249" y="405" width="121" height="121" rx="18" fill="#58A6FF"/>
+    <rect x="387" y="405" width="121" height="121" rx="18" fill="#FF8C00"/>
+  </g>
+  <use href="#ast" width="120" height="120" x="250" y="268" style="--bv:#E3474A"/>
+  <use href="#ast" width="120" height="120" x="388" y="268" style="--bh:#3FB950"/>
+  <use href="#ast" width="120" height="120" x="250" y="406" style="--bd:#58A6FF"/>
+  <use href="#ast" width="120" height="120" x="388" y="406" style="--ba:#FF8C00"/>
+
+  <!-- Subtle arrow -->
+  <g stroke="var(--c-sub)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <line x1="540" y1="397" x2="632" y2="397"/>
+    <polyline points="616,383 636,397 616,411"/>
+  </g>
+
+  <!-- Fused tile: the four bars combined, each in its channel colour -->
+  <rect x="663" y="267" width="259" height="259" rx="24" fill="var(--c-text)" stroke="var(--c-border)" stroke-width="4"/>
+  <use href="#ast" width="258" height="258" x="664" y="268" style="--bv:#E3474A; --bh:#3FB950; --bd:#58A6FF; --ba:#FF8C00"/>
+</svg>
