@@ -2769,6 +2769,7 @@
       relatedWork: {
         toolId:    'multispectral-fusion-tool',
         sourceUrl: window.FUSION_RELATED_WORK_URL || '/assets/shared/related-work.json',
+        publicationsSourceUrl: window.PUBLICATIONS_SOURCE_URL || 'https://enheragu.github.io/publications-data.json',
       },
     });
 
