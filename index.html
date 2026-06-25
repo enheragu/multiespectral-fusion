@@ -10,6 +10,8 @@ lang_mode: path
 with_manifest: true
 webapp_application_category: PhotoApplication
 with_publication_ui: true
+with_chart_legend: true
+with_pyodide_runtime: true
 header_title: MultiespectralFusion
 header_subtitle: Visible + LWIR multispectral image fusion
 header_subtitle_id: subtitle
@@ -21,9 +23,7 @@ custom_css:
   - css/style.css
 custom_js:
   - https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js
-  - /multiespectral-fusion/assets/shared/chart-legend.js
   - js/i18n.js
-  - /multiespectral-fusion/assets/js/core/pyodide-runtime.js
   - js/app-pyfusion.js
   - js/app-math.js
   - js/app-compute.js
