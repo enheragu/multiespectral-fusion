@@ -1,0 +1,54 @@
+---
+layout: tool_document
+compact_mode: true
+lang_mode: path
+redirect_path: /multiespectral-fusion/about
+meta_title: About — MultiespectralFusion
+meta_description: MultiespectralFusion is part of a PhD thesis on multispectral fusion for detection on mobile robots, developed within the ARVC research group at UMH.
+og_title: About — MultiespectralFusion
+og_image_alt: MultiespectralFusion — visible (RGB) + LWIR thermal fusion preview
+icon_href: /multiespectral-fusion/assets/favicon.svg
+header_title: MultiespectralFusion
+header_subtitle: Visible + LWIR multispectral image fusion
+footer_credits_html: |
+  <p id="footer-author">Author: <a href="https://enheragu.github.io/" target="_blank" rel="noopener noreferrer">Enrique Heredia-Aguado</a></p>
+umh_url: "https://www.umh.es/"
+i3e_url: "https://i3e.umh.es/"
+arvc_url: "https://arvc.umh.es/"
+custom_css:
+  - css/style.css
+custom_js:
+  - js/i18n.js
+  - js/app.js
+---
+<div class="content-shell">
+  <main class="about-main">
+
+    {% capture about_body %}
+      <div id="about-body-text">
+        <p>This tool is part of a PhD thesis in robotics, computer vision, and artificial intelligence at the <strong>Universidad Miguel Hernández de Elche (UMH)</strong>, Spain. The thesis focuses on multispectral fusion techniques for detection tasks on mobile robots.</p>
+        <p>This web demonstrates <strong>static early fusion</strong> methods that combine visible (RGB) and long-wave infrared (LWIR) thermal images at the pixel level, before any feature extraction, showing how each method exploits the complementary information of the two spectra.</p>
+        <p>Developed within the <strong>ARVC</strong> (Automation, Robotics and Computer Vision) research group, part of the <strong><a href="{{ page.i3e_url }}" target="_blank" rel="noopener noreferrer">I3E</a></strong> research institute at UMH.</p>
+      </div>
+      <div class="about-logos">
+        <a href="{{ page.umh_url }}" target="_blank" rel="noopener noreferrer" class="about-logo-link" aria-label="Universidad Miguel Hernández de Elche">
+          <img src="assets/umh-logo.jpg" alt="Universidad Miguel Hernández de Elche" class="about-logo">
+        </a>
+        <a href="{{ page.i3e_url }}" target="_blank" rel="noopener noreferrer" class="about-logo-link" aria-label="I3E — Instituto de Investigación e Innovación en Ingeniería, UMH">
+          <img src="assets/i3e-logo.png" alt="I3E — Instituto de Investigación e Innovación en Ingeniería, UMH" class="about-logo">
+        </a>
+        <a href="{{ page.arvc_url }}" target="_blank" rel="noopener noreferrer" class="about-logo-link" aria-label="ARVC — Automation, Robotics and Computer Vision">
+          <img src="assets/arvc-logo.jpg" alt="ARVC — Automation, Robotics and Computer Vision" class="about-logo">
+        </a>
+      </div>
+    {% endcapture %}
+    {% include widgets/widget_content_box.html
+      title="About"
+      title_id="about-section-title"
+      title_tone="accent"
+      panel_class="intro-panel"
+      body=about_body
+    %}
+
+  </main>
+</div>

@@ -1,0 +1,46 @@
+.about-main {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.about-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  justify-content: center;
+  padding-top: 1rem;
+  padding-bottom: 0.25rem;
+}
+
+/* Fixed-size white card — all logos rendered identically regardless of aspect ratio.
+   White background works in light and dark mode without invert hacks. */
+.about-logo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.15s, border-color 0.15s;
+  text-decoration: none;
+  width: 200px;
+  height: 80px;
+}
+
+.about-logo-link:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border-color: #aaa;
+}
+
+.about-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+#about-body-text p + p {
+  margin-top: 0.6rem;
+}

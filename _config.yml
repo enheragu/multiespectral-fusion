@@ -24,3 +24,4 @@ defaults:
       with_image_card: true
       with_lightbox_stage: true
       with_chart_interactions: true
+      with_tools_nav: true

@@ -1,0 +1,17 @@
+- category: "Journal Articles"
+  type_key: "journal"
+  entries:
+    - key: "heredia2025fusion_static"
+      title: "Static Early Fusion Techniques for Visible and Thermal Images to Enhance Convolutional Neural Network Detection: A Performance Analysis"
+      year: 2025
+      authors:
+        - "Enrique Heredia-Aguado"
+        - "Juan Jose Cabrera"
+        - "Luis Miguel Jimenez"
+        - "David Valiente"
+        - "Arturo Gil"
+      venue: "Remote Sensing"
+      doi: "10.3390/rs17061060"
+      url: "https://www.mdpi.com/2072-4292/17/6/1060"
+      volume: "17"
+      number: "6"

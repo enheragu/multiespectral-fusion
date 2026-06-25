@@ -114,7 +114,7 @@
       },
 
       download: 'Download',
-      footerAuthor: 'Author:',
+      footerAuthor: 'Author: <a href="https://enheragu.github.io/" target="_blank" rel="noopener noreferrer">Enrique Heredia-Aguado</a>',
     },
 
     es: {
@@ -227,7 +227,7 @@
       },
 
       download: 'Descargar',
-      footerAuthor: 'Autor:',
+      footerAuthor: 'Autor: <a href="https://enheragu.github.io/" target="_blank" rel="noopener noreferrer">Enrique Heredia-Aguado</a>',
     },
   };
 

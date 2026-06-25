@@ -2576,7 +2576,9 @@
     set('lbl-equalize-rgb',        'equalize');
     set('lbl-equalize-lwir',       'equalize');
     set('lbl-hist-log',            'logScale');
-    set('footer-author',           'footerAuthor');
+    // footer-author carries an <a> link, so set it as HTML (set() uses textContent).
+    const _faEl = document.getElementById('footer-author');
+    if (_faEl && t.footerAuthor) _faEl.innerHTML = t.footerAuthor;
 
     ALL_METHODS.forEach((m) => {
       const btn = document.getElementById(`btn-method-${m}`);

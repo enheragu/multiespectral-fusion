@@ -1,0 +1,16 @@
+tools:
+  multispectral-fusion-tool:
+    title:
+      en: "Citing and related work"
+      es: "Referencias y trabajos relacionados"
+    support:
+      intro:
+        en: "If this tool was useful to you, consider giving a star to the {repo_link} and citing this work:"
+        es: "Si esta herramienta te ha resultado útil, considera dar una estrella al {repo_link} y citar este trabajo:"
+      repo:
+        url: "https://github.com/enheragu/multiespectral-fusion"
+        link_text:
+          en: "GitHub repository"
+          es: "repositorio de GitHub"
+      publication_keys:
+        - heredia2025fusion_static
